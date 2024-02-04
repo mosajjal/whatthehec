@@ -1,36 +1,3 @@
-/*
-HEC serveless is an executable designed to be deployed as a lambda function.
-It takes the input logs in base64 format (cloudwatch default), decodes them and sends them to a list of HEC endpoints.
-the binary is configure only using environment variables.
-configurable variables:
-- HEC_ENDPOINTS: a comma separated list of HEC endpoints. Example: https://localhost:8088,https://localhost:8089
-- HEC_TLS_VERIFY: whether to verify the TLS certificate of the HEC endpoints. Possible values: true, false
-- HEC_PROXY: the proxy to use for all the endpoints. Example: socks5://username:password@localhost:1080
-- HEC_TOKEN: the HEC token to use for all the endpoints
-- HEC_INDEX: the index to use for all the endpoints
-- HEC_SOURCE: the source to use for all the endpoints
-- HEC_SOURCETYPE: the sourcetype to use for all the endpoints
-- HEC_BATCH_SIZE: the batch size to use for all the endpoints
-- HEC_BATCH_TIMEOUT: the batch timeout to use for all the endpoints
-- HEC_BALANCE: the load balancing strategy to use. Possible values: roundrobin, random, sticky
-- HEC_STICKY_TTL: the sticky ttl to use for all the endpoints
-
-in case of a failure, the function will retry to send the logs to the same endpoint for 3 times.
-after that, it will try to send the logs to an optional S3 bucket.
-configurable variables:
-- S3_DOMAIN: the S3 domain to use for storing the logs in case of a failure. Example: s3.eu-west-1.amazonaws.com
-- S3_BUCKET: the S3 bucket to use for storing the logs in case of a failure
-- S3_KEY_PREFIX: the S3 key prefix to use for storing the logs in case of a failure
-
-there is also an ability to send the log to another S3 bucket, mainly for cold-storage purposes.
-configurable variables:
-- S3_COLD_STORAGE_BUCKET: the S3 bucket to use for storing the logs in case of a failure
-- S3_COLD_STORAGE_KEY_PREFIX: the S3 key prefix to use for storing the logs in case of a failure
-
-for managing retention on either S3 bucket, use the AWS console:
-https://lepczynski.it/en/aws_en/automatically-delete-old-files-from-aws-s3/
-*/
-
 package main
 
 import (
@@ -48,7 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/google/uuid"
 
 	"github.com/alexflint/go-arg"
@@ -357,10 +323,6 @@ func init() {
 	go hecRuntime.Start()
 }
 
-func main() {
-	lambda.Start(HandleRequest)
-}
-
 // CloudwatchLogs is the event structure for Cloudwatch Logs. the Data is base64 encoded
 type CloudwatchLogs struct {
 	// Cloudwatch Logs look like this and the Data is base64 and gzip. a custom marshaller is built to turn it into raw json
@@ -433,18 +395,6 @@ func (s *CloudwatchLogs) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
-}
-
-func HandleRequest(ctx context.Context, event CloudwatchLogs) (string, error) {
-	s, err := event.MarshalJSON()
-	if err != nil {
-		return "", err
-	}
-	hecRuntime.SendSingleEvent(string(s))
-	// hecRuntime.Events <- string(s)
-	// time.Sleep(time.Second * 2)
-	// <-hecRuntime.Done
-	return "OK", nil
 }
 
 func (h *HECRuntime) SendSingleEvent(event string) {
