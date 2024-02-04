@@ -17,6 +17,6 @@ CMD ["/app/lambda"]
 
 FROM alpine:edge
 RUN apk add --no-cache ca-certificates
-COPY --from=0 /app/lambda /sniproxy
+COPY --from=0 /app/lambda /lambda
 ENTRYPOINT ["/lambda"]
 
