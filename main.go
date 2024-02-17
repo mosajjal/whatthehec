@@ -204,23 +204,28 @@ func (s3Bucket *S3) Send(events ...*splunk.Event) error {
 		return err
 	}
 	AmazonS3URL := ParseAmazonS3URL(u)
-	// s3Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-	// 	return aws.Endpoint{
-	// 		URL: fmt.Sprintf("%s://%s", u.Scheme, strings.TrimPrefix(u.Host, AmazonS3URL.Bucket+".")),
-	// 	}, nil
-	// })
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		// config.WithRegion(AmazonS3URL.Region),
-		config.WithRegion("ap-southeast-2"),
-		// config.WithEndpointResolverWithOptions(s3Resolver),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(s3Bucket.AccessKeyID, s3Bucket.AccessKeySecret, "")),
-	)
+	// if AccessKeyID or AccessKeySecret is not provided, use the default credentials provider grabbing the role
+	var awsCfg aws.Config
+	if s3Bucket.AccessKeyID == "" || s3Bucket.AccessKeySecret == "" {
+		// empty session
+		awsCfg, err = config.LoadDefaultConfig(context.TODO())
+		if err != nil {
+			log.Fatalf("Unable to load SDK config: %v", err)
+		}
+	} else {
+		awsCfg, err = config.LoadDefaultConfig(context.TODO(),
+			// TODO: either remove region or make it configurable
+			config.WithRegion("ap-southeast-2"),
+			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(s3Bucket.AccessKeyID, s3Bucket.AccessKeySecret, "")),
+		)
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	client := s3.NewFromConfig(cfg)
+	client := s3.NewFromConfig(awsCfg)
 
 	// convert the events back to JSON as IO
 	var buf bytes.Buffer
