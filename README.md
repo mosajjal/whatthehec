@@ -1,48 +1,37 @@
-# Splunk HEC tools for the cloud
+# Cloud Splunk HEC Tools Overview
 
-This repository has a few handy tools for pushing events (mostly CloudWatch logs) to Splunk via different methods. 
+This repository offers tools designed to facilitate the forwarding of events, with a focus on CloudWatch logs, to Splunk using various methods. It specializes in converting CloudWatch logs from their native base64 format and dispatching them to designated Splunk HTTP Event Collector (HEC) endpoints.
 
-It takes the input logs in base64 format (cloudwatch default), decodes them and sends them to a list of HEC endpoints.
-the binary is configure only using environment variables.
-configurable variables:
-- HEC_ENDPOINTS: a comma separated list of HEC endpoints. Example: https://localhost:8088,https://localhost:8089
-- HEC_TLS_VERIFY: whether to verify the TLS certificate of the HEC endpoints. Possible values: true, false
-- HEC_PROXY: the proxy to use for all the endpoints. Example: socks5://username:password@localhost:1080
-- HEC_TOKEN: the HEC token to use for all the endpoints
-- HEC_INDEX: the index to use for all the endpoints
-- HEC_SOURCE: the source to use for all the endpoints
-- HEC_SOURCETYPE: the sourcetype to use for all the endpoints
-- HEC_BATCH_SIZE: the batch size to use for all the endpoints
-- HEC_BATCH_TIMEOUT: the batch timeout to use for all the endpoints
-- HEC_BALANCE: the load balancing strategy to use. Possible values: roundrobin, random, sticky
-- HEC_STICKY_TTL: the sticky ttl to use for all the endpoints
+## Configuration via Environment Variables
 
-in case of a failure, the function will retry to send the logs to the endpoint.
-after that, it will try to send the logs to an optional S3 bucket.
-configurable variables:
-- S3_URL: the S3 URI to use for storing the logs in case of a failure. Example: `https://YOURBUCKET.s3.ap-southeast-2.amazonaws.com/YOURFOLDER/`
-- S3_ACCESS_KEY_ID: the S3 access key id to authenticate. leave empty if you're assuming a role
-- S3_ACCESS_KEY_SECRET: the S3 access key secret to authenticate. leave empty if you're assuming a role
+The utility leverages environment variables for configuration, enabling straightforward setup and adaptability. The configurable options include:
 
-there is also the ability to send the log to another S3 bucket, mainly for cold-storage purposes.
-configurable variables:
-- S3_COLD_STORAGE_URL: the S3 URI to use for storing the logs as cold storage Example: `https://YOURBUCKET.s3.ap-southeast-2.amazonaws.com/YOURFOLDER/`
-- S3_COLD_STORAGE_ACCESS_KEY_ID: the S3 access key id to authenticate. leave empty if you're assuming a role
-- S3_COLD_STORAGE_ACCESS_KEY_SECRET: the S3 access key secret to authenticate. leave empty if you're assuming a role
+- **HEC_ENDPOINTS**: A comma-separated list of Splunk HEC endpoints (e.g., `https://localhost:8088,https://localhost:8089`).
+- **HEC_TLS_VERIFY**: Determines whether to verify the TLS certificate for HEC endpoints, with possible values of `true` or `false`.
+- **HEC_PROXY**: The proxy server address for connecting to HEC endpoints (e.g., `socks5://username:password@localhost:1080`).
+- **HEC_TOKEN**: Authentication token for HEC.
+- **HEC_INDEX**: Target index for the logs.
+- **HEC_SOURCE**: Source identifier for the logs.
+- **HEC_SOURCETYPE**: Defines the type of source for the logs.
+- **HEC_BATCH_SIZE** and **HEC_BATCH_TIMEOUT**: Configurations for batching logs.
+- **HEC_BALANCE**: Load balancing strategy among `roundrobin`, `random`, or `sticky`.
+- **HEC_STICKY_TTL**: Time-to-live for sticky sessions.
 
-for managing retention on either S3 bucket, use the AWS console:
-https://lepczynski.it/en/aws_en/automatically-delete-old-files-from-aws-s3/
+In case of delivery failure, the tool retries sending logs to the HEC endpoint. If persistent failures occur, it can redirect logs to an S3 bucket for storage, with additional options for cold storage. The related S3 settings include:
 
+- **S3_URL**: URI for primary S3 storage in case of failure (e.g., `https://YOURBUCKET.s3.ap-southeast-2.amazonaws.com/YOURFOLDER/`).
+- **S3_ACCESS_KEY_ID** and **S3_ACCESS_KEY_SECRET**: Authentication credentials for S3. These can be left blank if assuming an AWS role.
+- **S3_COLD_STORAGE_URL**: URI for S3 cold storage (e.g., `https://YOURBUCKET.s3.ap-southeast-2.amazonaws.com/YOURFOLDER/`).
+- **S3_COLD_STORAGE_ACCESS_KEY_ID** and **S3_COLD_STORAGE_ACCESS_KEY_SECRET**: Authentication credentials for S3 cold storage, optional if assuming an AWS role.
 
-## Build as a lambda function
+## Lambda Function Deployment
 
-```bash
-CGO_ENABLED=0 go build -ldflags='-s -w' -buildmode=pie -tags lambda
-```
+The tools can be compiled as a Lambda function using the provided command line. Batching and load balancing are not supported in Lambda mode due to the nature of Lambda triggers. A separate Lambda function is recommended for handling failed attempts instead of relying on the built-in Dead Letter Queue (DLQ).
 
-Note that Batching and load balancing is not supported in lambda mode due to the nature of lambda triggers. the recommended approach is also to not use the builtin DLQ and use
-another Lambda function to deal with the failed attempts
+Deployment in Lambda requires using the container runtime. You must create a private Elastic Container Registry (ECR) repository, build the Dockerfile from this repository, and push the image to ECR. For S3 interactions, using AWS roles for authentication is advised over static keys.
 
-the lambda function only works with the container runtime. Due to the current limitation of lambda not being able to directly use public registries, you need to create a private ECR repository, build this repositories' Dockerfile and push it. 
+## Managing Retention in S3
 
-If you intend to use AWS roles rather than static key for authenticating to s3, you must keep both 
+For retention policies on S3 buckets, management is conducted through the AWS console. A provided link guides on automating the deletion of old files from S3, ensuring efficient storage management.
+
+[Blog post](https://lepczynski.it/en/aws_en/automatically-delete-old-files-from-aws-s3/)
