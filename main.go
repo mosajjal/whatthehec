@@ -22,6 +22,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/mosajjal/Go-Splunk-HTTP/splunk/v2"
 )
 
@@ -65,6 +66,7 @@ type HECRuntime struct {
 }
 
 var hecRuntime *HECRuntime
+var awsCfg aws.Config
 
 type HECConfig struct {
 	endpoint     string
@@ -117,6 +119,18 @@ func NewHEC(conf HECConfig) *HECConn {
 
 	if !strings.HasSuffix(conf.endpoint, "/services/collector") {
 		conf.endpoint = fmt.Sprintf("%s/services/collector", conf.endpoint)
+	}
+
+	// if token start with arn:aws:secretsmanager:, get the secret from AWS Secrets Manager
+	if strings.HasPrefix(conf.token, "arn:aws:secretsmanager:") {
+		secretMgr := secretsmanager.NewFromConfig(awsCfg)
+		secret, err := secretMgr.GetSecretValue(context.Background(), &secretsmanager.GetSecretValueInput{
+			SecretId: aws.String(conf.token),
+		})
+		if err != nil {
+			log.Fatalf("Couldn't get secret from AWS Secrets Manager. Here's why: %v", err)
+		}
+		conf.token = *secret.SecretString
 	}
 
 	client := splunk.NewClient(httpClient, conf.endpoint, conf.token, conf.source, conf.sourcetype, conf.index)
@@ -204,26 +218,6 @@ func (s3Bucket *S3) Send(events ...*splunk.Event) error {
 		return err
 	}
 	AmazonS3URL := ParseAmazonS3URL(u)
-
-	// if AccessKeyID or AccessKeySecret is not provided, use the default credentials provider grabbing the role
-	var awsCfg aws.Config
-	if s3Bucket.AccessKeyID == "" || s3Bucket.AccessKeySecret == "" {
-		// empty session
-		awsCfg, err = config.LoadDefaultConfig(context.TODO())
-		if err != nil {
-			log.Fatalf("Unable to load SDK config: %v", err)
-		}
-	} else {
-		awsCfg, err = config.LoadDefaultConfig(context.TODO(),
-			// TODO: either remove region or make it configurable
-			config.WithRegion("ap-southeast-2"),
-			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(s3Bucket.AccessKeyID, s3Bucket.AccessKeySecret, "")),
-		)
-	}
-
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	client := s3.NewFromConfig(awsCfg)
 
@@ -323,6 +317,23 @@ func init() {
 		FailureS3: failureS3,
 		ColdS3:    coldS3,
 	}
+
+	// if AccessKeyID or AccessKeySecret is not provided, use the default credentials provider grabbing the role
+	var err error
+	if args.S3AccessKeyID == "" || args.S3AccessKeySecret == "" {
+		// empty session
+		awsCfg, err = config.LoadDefaultConfig(context.TODO())
+		if err != nil {
+			log.Fatalf("Unable to load SDK config: %v", err)
+		}
+	} else {
+		awsCfg, err = config.LoadDefaultConfig(context.TODO(),
+			// TODO: either remove region or make it configurable
+			config.WithRegion("ap-southeast-2"),
+			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(args.S3AccessKeyID, args.S3AccessKeySecret, "")),
+		)
+	}
+
 	hecRuntime.Events = make(chan string)
 	// start the runtime
 	go hecRuntime.Start()
