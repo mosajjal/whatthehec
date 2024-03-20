@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.21.6-alpine3.19
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.22.1-alpine3.19
 LABEL maintainer "Ali Mosajjal <hi@n0p.me>"
 
 
