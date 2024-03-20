@@ -124,7 +124,9 @@ func NewHEC(conf HECConfig) *HECConn {
 
 	// if token start with arn:aws:secretsmanager:, get the secret from AWS Secrets Manager
 	if strings.HasPrefix(conf.token, "arn:aws:secretsmanager:") {
-		secretMgr := secretsmanager.NewFromConfig(awsCfg)
+		secretMgr := secretsmanager.NewFromConfig(awsCfg, func(o *secretsmanager.Options) {
+			o.Region = args.Region
+		})
 		secret, err := secretMgr.GetSecretValue(context.Background(), &secretsmanager.GetSecretValueInput{
 			SecretId: aws.String(conf.token),
 		})
