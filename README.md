@@ -6,6 +6,7 @@ This repository offers tools designed to facilitate the forwarding of events, wi
 
 The utility leverages environment variables for configuration, enabling straightforward setup and adaptability. The configurable options include:
 
+- **AWS_REGION**: The AWS region for the IAM role and authentication.
 - **HEC_ENDPOINTS**: A comma-separated list of Splunk HEC endpoints (e.g., `https://localhost:8088,https://localhost:8089`).
 - **HEC_TLS_VERIFY**: Determines whether to verify the TLS certificate for HEC endpoints, with possible values of `true` or `false`.
 - **HEC_PROXY**: The proxy server address for connecting to HEC endpoints (e.g., `socks5://username:password@localhost:1080`).

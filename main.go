@@ -27,6 +27,7 @@ import (
 )
 
 var args struct {
+	Region                       string        `arg:"env:AWS_REGION" default:"ap-southeast-2"`
 	Endpoints                    []string      `arg:"env:HEC_ENDPOINTS,required"`
 	TLSSkipVerify                bool          `arg:"env:HEC_TLS_SKIP_VERIFY" default:"true"`
 	Proxy                        string        `arg:"env:HEC_PROXY"`
@@ -322,14 +323,17 @@ func init() {
 	var err error
 	if args.S3AccessKeyID == "" || args.S3AccessKeySecret == "" {
 		// empty session
-		awsCfg, err = config.LoadDefaultConfig(context.TODO())
+		awsCfg, err = config.LoadDefaultConfig(
+			context.TODO(),
+			config.WithRegion(args.Region),
+		)
 		if err != nil {
 			log.Fatalf("Unable to load SDK config: %v", err)
 		}
 	} else {
 		awsCfg, err = config.LoadDefaultConfig(context.TODO(),
 			// TODO: either remove region or make it configurable
-			config.WithRegion("ap-southeast-2"),
+			config.WithRegion(args.Region),
 			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(args.S3AccessKeyID, args.S3AccessKeySecret, "")),
 		)
 	}
