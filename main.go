@@ -259,6 +259,24 @@ func (s3Bucket *S3) Send(events ...*splunk.Event) error {
 
 func init() {
 	arg.MustParse(&args)
+	// if AccessKeyID or AccessKeySecret is not provided, use the default credentials provider grabbing the role
+	var err error
+	if args.S3AccessKeyID == "" || args.S3AccessKeySecret == "" {
+		// empty session
+		awsCfg, err = config.LoadDefaultConfig(
+			context.TODO(),
+			config.WithRegion(args.Region),
+		)
+		if err != nil {
+			log.Fatalf("Unable to load SDK config: %v", err)
+		}
+	} else {
+		awsCfg, err = config.LoadDefaultConfig(context.TODO(),
+			// TODO: either remove region or make it configurable
+			config.WithRegion(args.Region),
+			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(args.S3AccessKeyID, args.S3AccessKeySecret, "")),
+		)
+	}
 
 	// set up each HEC connection
 	var hecConns []*HECConn
@@ -320,25 +338,6 @@ func init() {
 		StickyTTL: args.StickyTTL,
 		FailureS3: failureS3,
 		ColdS3:    coldS3,
-	}
-
-	// if AccessKeyID or AccessKeySecret is not provided, use the default credentials provider grabbing the role
-	var err error
-	if args.S3AccessKeyID == "" || args.S3AccessKeySecret == "" {
-		// empty session
-		awsCfg, err = config.LoadDefaultConfig(
-			context.TODO(),
-			config.WithRegion(args.Region),
-		)
-		if err != nil {
-			log.Fatalf("Unable to load SDK config: %v", err)
-		}
-	} else {
-		awsCfg, err = config.LoadDefaultConfig(context.TODO(),
-			// TODO: either remove region or make it configurable
-			config.WithRegion(args.Region),
-			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(args.S3AccessKeyID, args.S3AccessKeySecret, "")),
-		)
 	}
 
 	hecRuntime.Events = make(chan string)
