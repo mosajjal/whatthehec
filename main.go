@@ -122,6 +122,7 @@ func NewHEC(conf HECConfig) *HECConn {
 		conf.endpoint = fmt.Sprintf("%s/services/collector", conf.endpoint)
 	}
 
+	hectoken := conf.token
 	// if token start with arn:aws:secretsmanager:, get the secret from AWS Secrets Manager
 	if strings.HasPrefix(conf.token, "arn:aws:secretsmanager:") {
 		secretMgr := secretsmanager.NewFromConfig(awsCfg, func(o *secretsmanager.Options) {
@@ -131,12 +132,12 @@ func NewHEC(conf HECConfig) *HECConn {
 			SecretId: aws.String(conf.token),
 		})
 		if err != nil {
-			log.Fatalf("Couldn't get secret from AWS Secrets Manager. Here's why: %v", err)
+			log.Fatalf("Couldn't get secret from AWS Secrets Manager. Here's why: %v. the awsCfg is %#+v", err, awsCfg)
 		}
-		conf.token = *secret.SecretString
+		hectoken = *secret.SecretString
 	}
 
-	client := splunk.NewClient(httpClient, conf.endpoint, conf.token, conf.source, conf.sourcetype, conf.index)
+	client := splunk.NewClient(httpClient, conf.endpoint, hectoken, conf.source, conf.sourcetype, conf.index)
 	conn := &HECConn{conf, false, client}
 	conn.UpdateHealthStatus()
 	return conn
