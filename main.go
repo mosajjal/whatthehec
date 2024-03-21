@@ -122,22 +122,7 @@ func NewHEC(conf HECConfig) *HECConn {
 		conf.endpoint = fmt.Sprintf("%s/services/collector", conf.endpoint)
 	}
 
-	hectoken := conf.token
-	// if token start with arn:aws:secretsmanager:, get the secret from AWS Secrets Manager
-	if strings.HasPrefix(conf.token, "arn:aws:secretsmanager:") {
-		secretMgr := secretsmanager.NewFromConfig(awsCfg, func(o *secretsmanager.Options) {
-			o.Region = args.Region
-		})
-		secret, err := secretMgr.GetSecretValue(context.Background(), &secretsmanager.GetSecretValueInput{
-			SecretId: aws.String(conf.token),
-		})
-		if err != nil {
-			log.Fatalf("Couldn't get secret from AWS Secrets Manager. Here's why: %v. the awsCfg is %#+v", err, awsCfg)
-		}
-		hectoken = *secret.SecretString
-	}
-
-	client := splunk.NewClient(httpClient, conf.endpoint, hectoken, conf.source, conf.sourcetype, conf.index)
+	client := splunk.NewClient(httpClient, conf.endpoint, conf.token, conf.source, conf.sourcetype, conf.index)
 	conn := &HECConn{conf, false, client}
 	conn.UpdateHealthStatus()
 	return conn
@@ -276,6 +261,24 @@ func init() {
 			config.WithRegion(args.Region),
 			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(args.S3AccessKeyID, args.S3AccessKeySecret, "")),
 		)
+		if err != nil {
+			log.Fatalf("Unable to load SDK config: %v", err)
+		}
+	}
+
+	hectoken := args.Token
+	// if token start with arn:aws:secretsmanager:, get the secret from AWS Secrets Manager
+	if strings.HasPrefix(hectoken, "arn:aws:secretsmanager:") {
+		secretMgr := secretsmanager.NewFromConfig(awsCfg, func(o *secretsmanager.Options) {
+			o.Region = args.Region
+		})
+		secret, err := secretMgr.GetSecretValue(context.Background(), &secretsmanager.GetSecretValueInput{
+			SecretId: aws.String(hectoken),
+		})
+		if err != nil {
+			log.Fatalf("Couldn't get secret from AWS Secrets Manager. Here's why: %v", err)
+		}
+		hectoken = *secret.SecretString
 	}
 
 	// set up each HEC connection
@@ -285,7 +288,7 @@ func init() {
 			endpoint:     hec,
 			tlsVerify:    args.TLSSkipVerify,
 			proxy:        args.Proxy,
-			token:        args.Token,
+			token:        hectoken,
 			index:        args.Index,
 			source:       args.Source,
 			sourcetype:   args.Sourcetype,
