@@ -267,9 +267,8 @@ func init() {
 	}
 
 	hectoken := args.Token
-	log.Println("Token is: ", hectoken) //TODO:remove
 	// if token start with arn:aws:secretsmanager:, get the secret from AWS Secrets Manager
-	if strings.Contains(hectoken, "secretsmanager") {
+	if strings.HasPrefix(hectoken, "arn:aws:secretsmanager:") {
 		log.Println("Getting token from AWS Secrets Manager")
 		secretMgr := secretsmanager.NewFromConfig(awsCfg, func(o *secretsmanager.Options) {
 			o.Region = args.Region
