@@ -44,7 +44,25 @@ jobs:
           name: hec-lambda-arm64.zip
           path: hec-lambda-arm64.zip
 
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: hec-lambda-arm64.zip
+          asset_name: hec-lambda-arm64.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: ""
+
       - uses: actions/upload-artifact@v2
         with:
           name: hec-lambda-amd64.zip
           path: hec-lambda-amd64.zip
+
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: hec-lambda-amd64.zip
+          asset_name: hec-lambda-amd64.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: ""
