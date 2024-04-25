@@ -8,8 +8,7 @@ jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -40,9 +39,12 @@ jobs:
           GOARCH: amd64
           CGO_ENABLED: 0
 
-      - name: Release with Notes
-        uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v2
         with:
-          files: |
-            hec-lambda-arm64.zip
-            hec-lambda-amd64.zip
+          name: hec-lambda-arm64.zip
+          path: hec-lambda-arm64.zip
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: hec-lambda-amd64.zip
+          path: hec-lambda-amd64.zip
