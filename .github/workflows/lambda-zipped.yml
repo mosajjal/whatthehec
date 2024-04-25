@@ -41,10 +41,8 @@ jobs:
           CGO_ENABLED: 0
 
       - name: Release with Notes
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             hec-lambda-arm64.zip
             hec-lambda-amd64.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
