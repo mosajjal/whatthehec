@@ -29,7 +29,23 @@ In case of delivery failure, the tool retries sending logs to the HEC endpoint. 
 
 The tools can be compiled as a Lambda function using the provided command line. Batching and load balancing are not supported in Lambda mode due to the nature of Lambda triggers. A separate Lambda function is recommended for handling failed attempts instead of relying on the built-in Dead Letter Queue (DLQ).
 
-Deployment in Lambda requires using the container runtime. You must create a private Elastic Container Registry (ECR) repository, build the Dockerfile from this repository, and push the image to ECR. For S3 interactions, using AWS roles for authentication is advised over static keys.
+### Deployment in Lambda using the container runtime
+
+You must create a private Elastic Container Registry (ECR) repository, build the Dockerfile from this repository, and push the image to ECR. For S3 interactions, using AWS roles for authentication is advised over static keys.
+
+### Deployment in Lambda using the zip archive
+
+open a terminal and run the following commands:
+
+```bash
+wget https://github.com/mosajjal/whatthehec/releases/latest/download/hec-lambda-arm64.zip
+aws --profile spk lambda create-function --function-name myFunction \
+          --runtime provided.al2023 --handler bootstrap \
+          --architectures arm64 \
+          --role REPLACE_WITH_AWS_IAM_ROLE \
+          --zip-file fileb://hec-lambda-arm64.zip
+```
+
 
 ## Managing Retention in S3
 
