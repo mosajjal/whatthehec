@@ -52,7 +52,7 @@ func HandleRequest(ctx context.Context, event CloudwatchLogs) (string, error) {
 	if args.ExtractLogEvents {
 		logs := CloudwatchLogsWithLogEvents{}
 		// extract log events and send them to the runtime
-		s, err := json.Unmarshal(s, &logs)
+		err := json.Unmarshal(s, &logs)
 		if err != nil {
 			// send as a single event
 			hecRuntime.SendSingleEvent(string(s))
@@ -67,8 +67,8 @@ func HandleRequest(ctx context.Context, event CloudwatchLogs) (string, error) {
 			}
 			hecRuntime.SendSingleEvent(string(s))
 		}
-	} else {
-		hecRuntime.SendSingleEvent(string(s))
 		return "OK", nil
 	}
+	hecRuntime.SendSingleEvent(string(s))
+	return "OK", nil
 }
