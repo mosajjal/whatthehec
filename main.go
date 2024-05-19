@@ -79,7 +79,6 @@ type HECConfig struct {
 	index        string
 	source       string
 	sourcetype   string
-	host         string
 	batchTimeout time.Duration
 }
 
@@ -296,7 +295,6 @@ func init() {
 			index:        args.Index,
 			source:       args.Source,
 			sourcetype:   args.Sourcetype,
-			host:         args.Host,
 			batchTimeout: args.BatchTimeout,
 		}
 		hecConns = append(hecConns, NewHEC(hecConfig))
@@ -431,7 +429,7 @@ func (h *HECRuntime) SendSingleEvent(event string) {
 	eventBatch := make([]*splunk.Event, 1) // since we're sending a single event, the batch size is 1
 	eventBatch = append(eventBatch, &splunk.Event{
 		Time:  splunk.EventTime{Time: time.Now()},
-		Host:  args.Host,
+		Host:  "lambda",
 		Event: event,
 	})
 	err := h.SendEvents(eventBatch...)
@@ -457,7 +455,7 @@ func (h *HECRuntime) Start() {
 			// batch them up and send them to the HEC
 			eventBatch = append(eventBatch, &splunk.Event{
 				Time:  splunk.EventTime{Time: time.Now()},
-				Host:  args.Host,
+				Host:  "lambda",
 				Event: event,
 			})
 			// if len(eventBatch) == h.BatchSize {
