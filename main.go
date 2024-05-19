@@ -35,10 +35,12 @@ var args struct {
 	Index                        string        `arg:"env:HEC_INDEX" default:"main"`
 	Source                       string        `arg:"env:HEC_SOURCE" default:"hec_lambda"`
 	Sourcetype                   string        `arg:"env:HEC_SOURCETYPE" default:"hec_lambda"`
+	Host                         string        `arg:"env:HEC_HOST" default:"lambda"`
 	BatchSize                    int           `arg:"env:HEC_BATCH_SIZE" default:"1"`
 	BatchTimeout                 time.Duration `arg:"env:HEC_BATCH_TIMEOUT" default:"2s"`
 	Balance                      string        `arg:"env:HEC_BALANCE" default:"roundrobin"`
 	StickyTTL                    time.Duration `arg:"env:HEC_STICKY_TTL" default:"5m"`
+	ExtractLogEvents             bool          `arg:"env:HEC_EXTRACT_LOG_EVENTS" default:"false"`
 	S3URL                        string        `arg:"env:S3_URL" help:"example: https://YOURBUCKET.s3.ap-southeast-2.amazonaws.com/YOURFOLDER/"`
 	S3AccessKeyID                string        `arg:"env:S3_ACCESS_KEY_ID"`
 	S3AccessKeySecret            string        `arg:"env:S3_ACCESS_KEY_SECRET"`
@@ -77,6 +79,7 @@ type HECConfig struct {
 	index        string
 	source       string
 	sourcetype   string
+	host         string
 	batchTimeout time.Duration
 }
 
@@ -293,6 +296,7 @@ func init() {
 			index:        args.Index,
 			source:       args.Source,
 			sourcetype:   args.Sourcetype,
+			host:         args.Host,
 			batchTimeout: args.BatchTimeout,
 		}
 		hecConns = append(hecConns, NewHEC(hecConfig))
@@ -424,10 +428,10 @@ func (s *CloudwatchLogs) UnmarshalJSON(data []byte) error {
 }
 
 func (h *HECRuntime) SendSingleEvent(event string) {
-	eventBatch := make([]*splunk.Event, h.BatchSize)
+	eventBatch := make([]*splunk.Event, 1) // since we're sending a single event, the batch size is 1
 	eventBatch = append(eventBatch, &splunk.Event{
 		Time:  splunk.EventTime{Time: time.Now()},
-		Host:  "lambda",
+		Host:  args.Host,
 		Event: event,
 	})
 	err := h.SendEvents(eventBatch...)
@@ -453,7 +457,7 @@ func (h *HECRuntime) Start() {
 			// batch them up and send them to the HEC
 			eventBatch = append(eventBatch, &splunk.Event{
 				Time:  splunk.EventTime{Time: time.Now()},
-				Host:  "lambda",
+				Host:  args.Host,
 				Event: event,
 			})
 			// if len(eventBatch) == h.BatchSize {
