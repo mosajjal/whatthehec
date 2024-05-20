@@ -61,14 +61,14 @@ func HandleRequest(ctx context.Context, event CloudwatchLogs) (string, error) {
 			return "OK", nil
 		}
 		// otherwise, send each log event as a separate event
-		for _, log := range logs.LogEvents {
-			s, err := json.Marshal(log)
+		for _, logItem := range logs.LogEvents {
+			logStr, err := json.Marshal(logItem)
 			if err != nil {
 				// we don't expect this to happen. but if it does, we'll just skip this log event
 				log.Printf("Failed to marshal log event: %s. Skipping this log event\n", err)
 				continue
 			}
-			hecRuntime.SendSingleEvent(string(s))
+			hecRuntime.SendSingleEvent(string(logStr))
 		}
 		return "OK", nil
 	}
