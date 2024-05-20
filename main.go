@@ -429,7 +429,7 @@ func (s *CloudwatchLogs) UnmarshalJSON(data []byte) error {
 }
 
 func (h *HECRuntime) SendSingleEvent(event string) {
-	eventBatch := make([]*splunk.Event, 1) // since we're sending a single event, the batch size is 1
+	eventBatch := make([]*splunk.Event, h.BatchSize)
 	eventBatch = append(eventBatch, &splunk.Event{
 		Time:  splunk.EventTime{Time: time.Now()},
 		Host:  "lambda",
