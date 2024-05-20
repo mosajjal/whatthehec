@@ -18,7 +18,7 @@ The utility leverages environment variables for configuration, enabling straight
 - **HEC_BATCH_SIZE** and **HEC_BATCH_TIMEOUT**: Configurations for batching logs.
 - **HEC_BALANCE**: Load balancing strategy among `roundrobin`, `random`, or `sticky`.
 - **HEC_STICKY_TTL**: Time-to-live for sticky sessions.
-- **HEC_EXTRACT_LOGEVENTS**: defaults to false. If set to true, the tool will try to extract logEvents from the CloudWatch log stream and send each entry individually. 
+- **HEC_EXTRACT_LOG_EVENTS**: defaults to false. If set to true, the tool will try to extract logEvents from the CloudWatch log stream and send each entry individually. 
 
 In case of delivery failure, the tool retries sending logs to the HEC endpoint. If persistent failures occur, it can redirect logs to an S3 bucket for storage, with additional options for cold storage. The related S3 settings include:
 

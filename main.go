@@ -432,7 +432,7 @@ func (h *HECRuntime) SendSingleEvent(event string) {
 	eventBatch := make([]*splunk.Event, h.BatchSize)
 	eventBatch = append(eventBatch, &splunk.Event{
 		Time:  splunk.EventTime{Time: time.Now()},
-		Host:  "lambda",
+		Host:  args.Host,
 		Event: event,
 	})
 	err := h.SendEvents(eventBatch...)
@@ -458,7 +458,7 @@ func (h *HECRuntime) Start() {
 			// batch them up and send them to the HEC
 			eventBatch = append(eventBatch, &splunk.Event{
 				Time:  splunk.EventTime{Time: time.Now()},
-				Host:  "lambda",
+				Host:  args.Host,
 				Event: event,
 			})
 			// if len(eventBatch) == h.BatchSize {
