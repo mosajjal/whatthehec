@@ -245,7 +245,10 @@ func (s3Bucket *S3) Send(events ...*splunk.Event) error {
 }
 
 func init() {
-	arg.MustParse(&args)
+	if err := arg.Parse(&args); err != nil {
+		log.Fatalf("Couldn't parse arguments: %v", err)
+	}
+
 	// if AccessKeyID or AccessKeySecret is not provided, use the default credentials provider grabbing the role
 	var err error
 	if args.S3AccessKeyID == "" || args.S3AccessKeySecret == "" {
