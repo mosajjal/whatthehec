@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"log"
 
 	"github.com/aws/aws-lambda-go/lambda"
 )
@@ -55,6 +56,7 @@ func HandleRequest(ctx context.Context, event CloudwatchLogs) (string, error) {
 		err := json.Unmarshal(s, &logs)
 		if err != nil {
 			// send as a single event
+			log.Printf("Failed to unmarshal log events: %s. Sending as a single event\n", err)
 			hecRuntime.SendSingleEvent(string(s))
 			return "OK", nil
 		}
@@ -63,6 +65,7 @@ func HandleRequest(ctx context.Context, event CloudwatchLogs) (string, error) {
 			s, err := json.Marshal(log)
 			if err != nil {
 				// we don't expect this to happen. but if it does, we'll just skip this log event
+				log.Printf("Failed to marshal log event: %s. Skipping this log event\n", err)
 				continue
 			}
 			hecRuntime.SendSingleEvent(string(s))
