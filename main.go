@@ -32,6 +32,7 @@ var args struct {
 	TLSSkipVerify                bool          `arg:"env:HEC_TLS_SKIP_VERIFY" default:"true"`
 	Proxy                        string        `arg:"env:HEC_PROXY"`
 	Token                        string        `arg:"env:HEC_TOKEN"`
+	ChannelID                    string        `arg:"env:HEC_CHANNEL_ID"`
 	Index                        string        `arg:"env:HEC_INDEX" default:"main"`
 	Source                       string        `arg:"env:HEC_SOURCE" default:"hec_lambda"`
 	Sourcetype                   string        `arg:"env:HEC_SOURCETYPE" default:"hec_lambda"`
@@ -76,6 +77,7 @@ type HECConfig struct {
 	tlsVerify    bool
 	proxy        string
 	token        string
+	channelID    string
 	index        string
 	source       string
 	sourcetype   string
@@ -124,7 +126,17 @@ func NewHEC(conf HECConfig) *HECConn {
 		conf.endpoint = fmt.Sprintf("%s/services/collector", conf.endpoint)
 	}
 
-	client := splunk.NewClient(httpClient, conf.endpoint, conf.token, conf.source, conf.sourcetype, conf.index)
+	// check channel id and generate a new one if it's not uuid4
+	if conf.channelID == "" {
+		conf.channelID = uuid.New().String()
+	} else {
+		_, err := uuid.Parse(conf.channelID)
+		if err != nil {
+			conf.channelID = uuid.New().String()
+		}
+	}
+
+	client := splunk.NewClient(httpClient, conf.endpoint, conf.token, conf.channelID, conf.source, conf.sourcetype, conf.index)
 	conn := &HECConn{conf, false, client}
 	conn.UpdateHealthStatus()
 	return conn
@@ -295,6 +307,7 @@ func init() {
 			tlsVerify:    args.TLSSkipVerify,
 			proxy:        args.Proxy,
 			token:        hectoken,
+			channelID:    args.ChannelID,
 			index:        args.Index,
 			source:       args.Source,
 			sourcetype:   args.Sourcetype,

@@ -11,6 +11,7 @@ The utility leverages environment variables for configuration, enabling straight
 - **HEC_TLS_VERIFY**: Determines whether to verify the TLS certificate for HEC endpoints, with possible values of `true` or `false`.
 - **HEC_PROXY**: The proxy server address for connecting to HEC endpoints (e.g., `socks5://username:password@localhost:1080`).
 - **HEC_TOKEN**: Authentication token for HEC. if the token's value starts with `arn:aws:secretsmanager:`, it'll be considered to be a secret ARN and will be fetched from AWS Secrets. For authentication, lambda's role has priority, then S3_ACCESS_KEY_ID and S3_ACCESS_KEY_SECRET will be used. 
+- **HEC_CHANNEL_ID**: HEC Channel ID for the logs. If not provided, the tool will generate a random UUID at startup. the performance will be better if you provide a static value.
 - **HEC_INDEX**: Target index for the logs.
 - **HEC_SOURCE**: Source identifier for the logs.
 - **HEC_SOURCETYPE**: Defines the type of source for the logs.
