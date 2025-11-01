@@ -1,3 +1,10 @@
+# DEPRECATED: This Dockerfile is deprecated and will be removed in v2.0.0
+# Please use the provider-specific Dockerfiles:
+#   - Dockerfile.aws   for AWS Lambda
+#   - Dockerfile.azure for Azure Functions
+#   - Dockerfile.gcp   for GCP Cloud Functions
+# See MIGRATION.md for migration instructions.
+
 FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.23.4-alpine3.21
 LABEL maintainer="Ali Mosajjal <hi@n0p.me>"
 

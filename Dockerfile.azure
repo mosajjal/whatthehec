@@ -1,0 +1,32 @@
+# Multi-stage build for Azure Functions
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.23.4-alpine3.21 AS builder
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+
+LABEL maintainer="Ali Mosajjal <hi@n0p.me>"
+LABEL cloud.provider="azure"
+
+RUN apk add --no-cache git ca-certificates
+WORKDIR /build
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build Azure Function
+ENV CGO_ENABLED=0
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} GOFLAGS=-buildvcs=false \
+    go build -ldflags "-s -w" -o /azure-function ./cmd/azure-function
+
+# Final stage
+FROM alpine:3.21
+RUN apk add --no-cache ca-certificates
+
+COPY --from=builder /azure-function /azure-function
+ENTRYPOINT ["/azure-function"]

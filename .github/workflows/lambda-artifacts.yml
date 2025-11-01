@@ -1,0 +1,51 @@
+name: Publish AWS Lambda ZIP Artifacts
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "^1.23.4"
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Build AWS Lambda ${{ matrix.arch }}
+        run: |
+          go build -v -ldflags="-s -w" -o bootstrap ./cmd/aws-lambda
+          zip hec-lambda-${{ matrix.arch }}.zip bootstrap
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: 0
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hec-lambda-${{ matrix.arch }}.zip
+          path: hec-lambda-${{ matrix.arch }}.zip
+
+      - name: Upload to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: hec-lambda-${{ matrix.arch }}.zip
+          asset_name: hec-lambda-${{ matrix.arch }}.zip
+          tag: ${{ github.ref }}
+          overwrite: true

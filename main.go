@@ -1,3 +1,13 @@
+// DEPRECATED: This file is deprecated and will be removed in v2.0.0
+// Please use the new multi-cloud architecture:
+//   - cmd/aws-lambda/    for AWS Lambda
+//   - cmd/azure-function/ for Azure Functions  
+//   - cmd/gcp-function/   for GCP Cloud Functions
+// See MIGRATION.md for migration instructions.
+//
+// This file contains the legacy monolithic implementation.
+// It is kept for backward compatibility only.
+
 package main
 
 import (
