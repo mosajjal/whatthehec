@@ -1,3 +1,10 @@
+// DEPRECATED: This file is deprecated and will be removed in v2.0.0
+// Please use the new multi-cloud architecture in cmd/aws-lambda/
+// See MIGRATION.md for migration instructions.
+//
+// This file contains the legacy AWS Lambda implementation.
+// It is kept for backward compatibility only.
+
 //go:build lambda
 
 package main

@@ -25,7 +25,7 @@ RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} GOFLAGS=-buildvcs=false \
     go build -ldflags "-s -w" -o /gcp-function ./cmd/gcp-function
 
 # Final stage
-FROM alpine:edge
+FROM alpine:3.21
 RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /gcp-function /gcp-function
